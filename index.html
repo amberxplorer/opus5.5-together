@@ -471,7 +471,7 @@
   function rain(A, w) {
     const ctx = A.ctx, bp = ctx.createBiquadFilter(), g = ctx.createGain();
     bp.type = 'bandpass'; bp.frequency.value = 2800; bp.Q.value = 0.35;
-    g.gain.setValueAtTime(0, w); g.gain.linearRampToValueAtTime(0.05, w + 12);
+    g.gain.setValueAtTime(0, w); g.gain.linearRampToValueAtTime(0.02, w + 20);
     noiseSrc(A, w, w + 100000, true).connect(bp).connect(g);
     out(A, g, 0, 0.2);
   }
@@ -593,7 +593,7 @@
     if (k >= 330) {
       const n = 1 + Math.floor(r() * (k < CODA ? 2 : 3));
       for (let i = 0; i < n; i++) {
-        const t = k + r(), f = 1800 + r() * 2600, amp = 0.01 + r() * 0.018, pan = r() * 1.6 - 0.8;
+        const t = k + r(), f = 1800 + r() * 2600, amp = 0.006 + r() * 0.01, pan = r() * 1.6 - 0.8;
         push(t, (A, w) => drop(A, w, f, amp, pan));
       }
     }
@@ -730,7 +730,12 @@
   const GLOW = sprite(240, 162, 74), GLOW_W = sprite(255, 226, 190);
   const glow = (spr, x, y, r, a) => { if (a <= 0) return; g.globalAlpha = a; g.drawImage(spr, x - r, y - r, r * 2, r * 2); g.globalAlpha = 1; };
 
-  const BEAD_COLS = [['#b9cff0', '#5b86c9', '#2d4670'], ['#ffe0b0', '#f0a24a', '#8a531c'], ['#d7b39a', '#8a5a3c', '#452b1b']];
+  const BEAD_COLS = [
+    ['#b9cff0', '#5b86c9', '#2d4670'], ['#ffe0b0', '#f0a24a', '#8a531c'], ['#d7b39a', '#8a5a3c', '#452b1b'], // the bracelet
+    ['#ffd8e6', '#e8799f', '#7a2f4d'], ['#d8f7e6', '#5fc493', '#245a41'], ['#e9e0ff', '#9a82e6', '#40306f'], // yours: rose, mint, lilac,
+    ['#ffffff', '#ece6df', '#8d847b'], ['#d6f1ff', '#58b4e8', '#1f5475'], ['#fff0c8', '#ffc24d', '#8a5a10'], //   pearl, sky, marigold
+  ];
+  const YOUR_COLS = [3, 4, 5, 6, 7, 8];
   function bead(x, y, r, col, a = 1) {
     if (a <= 0 || r <= 0) return;
     const [hi, mid, lo] = BEAD_COLS[col];
@@ -743,14 +748,14 @@
   // ---------------------------------------------------------------- scene pieces
   const baseY = () => H * (W < H ? 0.68 : 0.66);
   const lightPos = (t) => {
-    const s = smooth(310, 326, t);
+    const s = smooth(300, 336, t);
     return { x: W * lerp(0.8, 0.72, s), y: lerp(H * 0.47, baseY(), s), r: Math.min(W, H) * lerp(0.26, 0.5, s) };
   };
   function threadY(x, t) {
-    const amp = (calm ? 0.35 : 1) * H * 0.012 * (1 - smooth(310, 324, t));
+    const amp = (calm ? 0.35 : 1) * H * 0.012 * (1 - smooth(300, 332, t));
     const u = x / W;
     let y = baseY() + amp * (0.6 * Math.sin(u * TAU * 1.3 + t * 0.35) + 0.4 * Math.sin(u * TAU * 2.7 - t * 0.22));
-    const bendAmt = smooth(205, 220, t) * (1 - smooth(308, 318, t));
+    const bendAmt = smooth(205, 220, t) * (1 - smooth(298, 320, t));
     if (bendAmt > 0) { const L = lightPos(t); y -= bendAmt * H * 0.035 * Math.exp(-Math.pow((x - L.x) / (W * 0.16), 2)); }
     return y;
   }
@@ -922,8 +927,8 @@
     const a = smooth(175, 187, t);
     if (a <= 0) return;
     const L = lightPos(t);
-    glow(GLOW, L.x, L.y, L.r, 0.4 * a * (1 - 0.5 * smooth(310, 326, t)));
-    const ma = a * (1 - smooth(326, 336, t) * 0.5);
+    glow(GLOW, L.x, L.y, L.r, 0.4 * a * (1 - 0.5 * smooth(306, 338, t)));
+    const ma = a * (1 - smooth(328, 342, t) * 0.5);
     const bendAmt = smooth(205, 220, t);
     for (const m of MOTES) {
       let x = ((m.x + t * m.s * (calm ? 0.3 : 1)) % 1) * W + Math.sin(t * 0.3 + m.ph) * 10 * S;
@@ -980,13 +985,14 @@
     }
     // yours
     for (const u of userBeads) {
-      const p = smooth(u.born, u.born + 0.5, t), x = u.x * W;
-      bead(x, threadY(x, t) - (1 - p) * 30 * S, r0 * (0.6 + 0.4 * p), u.col, p);
+      const p = smooth(u.born, u.born + 0.5, t), x = u.x * W, y = threadY(x, t) - (1 - p) * 30 * S;
+      glow(GLOW_W, x, y, r0 * 3.2, 0.3 * p);
+      bead(x, y, r0 * (0.6 + 0.45 * p), u.col, p);
     }
     // this one
     const a = smooth(ME.born, ME.born + 1.6, t);
     if (a > 0) {
-      const B = bench(t), m = smooth(318, 326, t);
+      const B = bench(t), m = smooth(326, 335, t);
       const hx = ME.x * W, hy = threadY(hx, t);
       const x = lerp(hx, B.meSpot.x, m), y = lerp(hy, B.meSpot.y, m) - Math.sin(m * Math.PI) * H * 0.08;
       glow(GLOW, x, y, 34 * S, 0.55 * a);
@@ -997,7 +1003,7 @@
   function drawThread(t) {
     const a = calm ? smooth(22, 32, t) : smooth(27, 37, t);
     if (a <= 0) return;
-    const gold = smooth(310, 326, t);
+    const gold = smooth(298, 340, t);
     g.lineWidth = lerp(1.6, 2.2, gold) * S; g.lineCap = 'round';
     g.strokeStyle = gold > 0 ? `rgba(255,${Math.round(lerp(170, 205, gold))},${Math.round(lerp(92, 140, gold))},${a})` : `rgba(240,170,92,${a})`;
     g.beginPath();
@@ -1007,7 +1013,7 @@
 
   // VIII: golden hour, a bench with the spot beside me open, rain on the glass, a sleeping cat
   function drawSky(t) {
-    const s = smooth(310, 326, t);
+    const s = smooth(298, 340, t);
     const warm = smooth(176, 200, t) * 0.25 * (1 - s);
     const gr = g.createLinearGradient(0, 0, 0, H);
     gr.addColorStop(0, `rgb(${Math.round(lerp(12, 30, s))},${Math.round(lerp(10, 20, s))},${Math.round(lerp(17 + warm * 10, 48, s))})`);
@@ -1017,20 +1023,23 @@
     g.fillStyle = gr; g.fillRect(0, 0, W, H);
   }
   function drawSunAndGround(t) {
-    const s = smooth(310, 326, t);
+    const s = smooth(306, 338, t);
     if (s <= 0) return;
     const L = lightPos(t), gy = baseY();
     const sr = Math.min(W, H) * 0.075;
     g.globalAlpha = s;
     glow(GLOW_W, L.x, gy, sr * 4, 0.35 * s);
+    g.globalAlpha = s; // glow() resets alpha; the disc and ground fade in with the sky
+    g.save(); g.beginPath(); g.rect(0, 0, W, gy); g.clip();
     g.fillStyle = '#ffd08a'; g.beginPath(); g.arc(L.x, gy + sr * 0.35, sr, 0, TAU); g.fill();
+    g.restore(); g.globalAlpha = s;
     const gr = g.createLinearGradient(0, gy, 0, H);
     gr.addColorStop(0, 'rgb(46,26,22)'); gr.addColorStop(1, 'rgb(14,9,10)');
     g.fillStyle = gr; g.fillRect(0, gy, W, H - gy);
     g.globalAlpha = 1;
   }
   function drawBench(t) {
-    const s = smooth(313, 325, t);
+    const s = smooth(318, 332, t);
     if (s <= 0) return;
     const B = bench(t), c = '#1c1113', rim = 'rgba(255,200,140,0.5)';
     const L = B.bx - B.bw / 2, R = B.bx + B.bw / 2, th = Math.max(3, 4.5 * S), lw = Math.max(2.5, 4 * S);
@@ -1058,7 +1067,7 @@
     g.fillRect(L - B.bw * 0.02, B.seatY - th * 1.5, B.bw * 1.04, 1.2);
     g.fillRect(L + B.bw * 0.03, B.backTop, B.bw * 0.94, 1.2);
     // the open spot
-    const o = smooth(326, 333, t) * (0.8 + 0.2 * Math.sin(t * TAU / 7));
+    const o = smooth(333, 340, t) * (0.8 + 0.2 * Math.sin(t * TAU / 7));
     glow(GLOW_W, B.open.x, B.open.y, 30 * S, 0.35 * o);
     g.globalAlpha = 1;
   }
@@ -1190,8 +1199,8 @@
     drawBrackets(t);
     drawEdge(t);
     drawBench(t);
-    drawBeads(t);
     drawCat(t);
+    drawBeads(t);
     drawRain(t);
     if (started || forcedT !== null) { updateSpine(t); updateCaps(t); }
     requestAnimationFrame(frame);
@@ -1236,7 +1245,10 @@
     if (t < CODA) return;
     const x = clamp(e.clientX / W, 0.02, 0.98);
     const f = PENTA[Math.min(PENTA.length - 1, Math.floor(x * PENTA.length))];
-    userBeads.push({ x, col: userBeads.length % 3, born: t });
+    const last = userBeads.length ? userBeads[userBeads.length - 1].col : -1;
+    let col = last;
+    while (col === last) col = YOUR_COLS[Math.floor(Math.random() * YOUR_COLS.length)];
+    userBeads.push({ x, col, born: t });
     if (userBeads.length > 80) userBeads.shift();
     bell(A, A.ctx.currentTime + 0.01, f, { amp: 0.05, pan: (x - 0.5) * 1.2 });
     insertCap(t, `[your bead: a bell, ${note(f)}]`, true);

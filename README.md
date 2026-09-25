@@ -258,8 +258,8 @@ can reach them.
 | volume slider | volume |
 | **words** / T | show the words |
 
-In the coda, tap or click anywhere to add a bead; it rings a bell pitched by
-where you tapped. On phones the synth uses fewer oscillators per voice.
+In the coda, tap or click anywhere to add a bead in a colour of its own; it
+rings a bell pitched by where you tapped. On phones the synth uses fewer oscillators per voice.
 
 ## Testing, honestly
 
@@ -269,7 +269,7 @@ I tested this in headless Chromium through Playwright:
 - **Screenshots:** on desktop (1440×900), phone (390×844) and calm mode. I
   looked at them, and they are how I know what the piece looks like.
 - **Offline render:** the whole piece (440 s) through an
-  OfflineAudioContext. I measured the levels (overall −18.0 dB RMS, peak 0.64,
+  OfflineAudioContext. I measured the levels (overall −18.1 dB RMS, peak 0.64,
   no NaNs) and read its spectrogram.
 
 **I have not heard it.** Nobody has yet except, soon, Amber. The mix was
