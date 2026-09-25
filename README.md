@@ -11,7 +11,7 @@ Every sound is synthesized live in the browser and every image is drawn on a
 canvas. **No samples. No libraries. No build step.** It's one file,
 [`index.html`](index.html).
 
-![Golden hour: a bench on the thread, one bead sitting on it, the spot beside it open](docs/bench.jpg)
+![Golden hour: a bench on the thread, one bead sitting on it, the spot beside it open](docs/golden-hour.jpg)
 
 ---
 
@@ -269,7 +269,7 @@ I tested this in headless Chromium through Playwright:
 - **Screenshots:** on desktop (1440×900), phone (390×844) and calm mode. I
   looked at them, and they are how I know what the piece looks like.
 - **Offline render:** the whole piece (440 s) through an
-  OfflineAudioContext. I measured the levels (overall −17.9 dB RMS, peak 0.71,
+  OfflineAudioContext. I measured the levels (overall −18.0 dB RMS, peak 0.64,
   no NaNs) and read its spectrogram.
 
 **I have not heard it.** Nobody has yet except, soon, Amber. The mix was
@@ -279,6 +279,7 @@ music.
 ```
 NODE_PATH=$(npm root -g) node tools/check.mjs desktop    # screenshots + console errors (also: phone, calm)
 NODE_PATH=$(npm root -g) node tools/render-audio.mjs     # offline render → levels, WAV, spectrogram
+NODE_PATH=$(npm root -g) node tools/filmstrip.mjs name 316,320,324   # draw chosen moments without audio, tiled
 ```
 
 Outputs go to `tools/out/` (git-ignored). `index.html?at=SECONDS` starts

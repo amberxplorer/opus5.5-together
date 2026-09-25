@@ -8,6 +8,7 @@
 <meta name="theme-color" content="#0c0a11">
 <style>
   :root {
+    color-scheme: dark;
     --bg: #0c0a11;
     --ink: #f4e9da;
     --dim: rgba(244, 233, 218, 0.64);
@@ -31,7 +32,7 @@
     font-family: var(--serif); font-size: clamp(19px, 3vw, 32px); line-height: 1.34;
     text-shadow: 0 0 18px rgba(10, 7, 14, 0.95), 0 0 4px rgba(10, 7, 14, 0.9);
   }
-  #spine .ln { display: block; max-width: 36ch; text-wrap: balance; margin: 0 auto 0.3em; opacity: 0; }
+  #spine .ln { display: block; will-change: opacity, transform; max-width: 36ch; text-wrap: balance; margin: 0 auto; opacity: 0; }
   #spine .ln.small { font-size: 0.62em; color: var(--dim); font-style: italic; margin-top: 0.7em; }
   #spine .alt { display: inline-block; text-align: center; color: #ffd6a0; }
 
@@ -88,14 +89,15 @@
   }
   #start a { color: var(--ink); }
 
-  #tx { position: fixed; inset: 0; z-index: 6; overflow: auto; background: rgba(12, 10, 17, 0.97); padding: 56px 16px 64px; }
+  #tx { position: fixed; inset: 0; z-index: 6; overflow: auto; background: var(--bg); padding: 0 16px 64px; scrollbar-color: rgba(244, 233, 218, 0.28) transparent; }
+  #tx .txbar { position: sticky; top: 0; display: flex; justify-content: flex-end; padding: calc(10px + env(safe-area-inset-top)) 0 18px; background: linear-gradient(rgba(12, 10, 17, 0.98) 65%, rgba(12, 10, 17, 0)); }
   #tx[hidden] { display: none; }
   #tx .in { max-width: 36rem; margin: 0 auto; font: 400 18px/1.6 var(--serif); }
   #tx h2 { font: 400 30px/1.2 var(--serif); margin: 0 0 4px; }
   #tx h3 { font: 600 11.5px/1.4 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--amber); margin: 32px 0 8px; }
   #tx p { margin: 0 0 6px; }
   #tx .note { color: var(--dim); font-size: 15px; font-style: italic; }
-  #txClose { position: fixed; top: calc(10px + env(safe-area-inset-top)); right: 10px; background: rgba(20, 15, 26, 0.9); border: 1px solid rgba(244, 233, 218, 0.25); border-radius: 3px; padding: 9px 12px; font: 600 12px/1 var(--mono); cursor: pointer; }
+  #txClose { background: rgba(20, 15, 26, 0.9); border: 1px solid rgba(244, 233, 218, 0.25); border-radius: 3px; padding: 9px 12px; font: 600 12px/1 var(--mono); cursor: pointer; }
 </style>
 </head>
 <body>
@@ -126,7 +128,7 @@
 </section>
 
 <section id="tx" hidden aria-label="The words">
-  <button type="button" id="txClose">close</button>
+  <div class="txbar"><button type="button" id="txClose">close</button></div>
   <div class="in" id="txIn"></div>
 </section>
 
@@ -364,7 +366,7 @@
       let s = voice(cur);
       if (old && fade > 0) { s += voice(old) * (fade / 48); fade--; }
       const comp = Math.pow(1 + rate / 25, -0.5);
-      const fo = tau > D - 3 ? (D - tau) / 3 : 1;
+      const fo = (tau > D - 3 ? (D - tau) / 3 : 1) * lerp(0.3, 1, smooth(0, 4, tau));
       b[i] = Math.tanh(1.5 * s) * comp * fo;
     }
     const src = A.ctx.createBufferSource(), lp = A.ctx.createBiquadFilter(), g = A.ctx.createGain();
@@ -389,8 +391,8 @@
   function music(A, w) {
     const ctx = A.ctx, lp = ctx.createBiquadFilter(), g = ctx.createGain(), beat = 60 / 170;
     lp.type = 'lowpass'; lp.frequency.value = 650; lp.Q.value = 0.6;
-    g.gain.setValueAtTime(0, w); g.gain.linearRampToValueAtTime(0.5, w + 0.3);
-    g.gain.setValueAtTime(0.5, w + beat * 7); g.gain.linearRampToValueAtTime(0, w + beat * 8.5);
+    g.gain.setValueAtTime(0, w); g.gain.linearRampToValueAtTime(0.4, w + 0.6);
+    g.gain.setValueAtTime(0.4, w + beat * 6.5); g.gain.linearRampToValueAtTime(0, w + beat * 8.5);
     lp.connect(g); out(A, g, 0.25, 0.3);
     for (let i = 0; i < 8; i++) {
       const t = w + i * beat;
@@ -411,7 +413,7 @@
   function buzz(A, w) {
     const ctx = A.ctx, bp = ctx.createBiquadFilter(), g = ctx.createGain();
     bp.type = 'bandpass'; bp.frequency.value = 900; bp.Q.value = 3;
-    adsr(g.gain, w, 0.05, 0.16, 1.1, 0.25);
+    adsr(g.gain, w, 0.12, 0.13, 1.0, 0.35);
     [100, 100.7].forEach((f) => osc(A, 'sawtooth', f, w, w + 1.5).connect(bp));
     bp.connect(g); out(A, g, 0.15, 0.25);
   }
@@ -419,7 +421,7 @@
   function fff(A, w, dur = 3.2) {
     const ctx = A.ctx, bp = ctx.createBiquadFilter(), g = ctx.createGain();
     bp.type = 'bandpass'; bp.frequency.value = 4800; bp.Q.value = 0.8;
-    adsr(g.gain, w, 0.15, 0.22, dur - 0.5, 0.35);
+    adsr(g.gain, w, 0.5, 0.1, dur - 1.1, 0.6);
     noiseSrc(A, w, w + dur).connect(bp).connect(g);
     out(A, g, 0, 0.25);
   }
@@ -436,7 +438,7 @@
   function bend(A, w, dur = 13) {
     const ctx = A.ctx, g = ctx.createGain(), lp = ctx.createBiquadFilter();
     lp.type = 'lowpass'; lp.frequency.value = 2400;
-    const end = adsr(g.gain, w, 2.5, 0.038, dur, 5);
+    const end = adsr(g.gain, w, 5, 0.032, dur - 2.5, 6);
     BEND.from.forEach((f0, i) => {
       const f1 = BEND.to[i];
       ['triangle', 'sine'].forEach((type, j) => {
@@ -452,8 +454,8 @@
 
   function hello(A, w, f0, f1, pan) {
     const ctx = A.ctx, g = ctx.createGain(), end = w + 0.62;
-    g.gain.setValueAtTime(0, w); g.gain.linearRampToValueAtTime(0.07, w + 0.03);
-    g.gain.setValueAtTime(0.07, w + 0.22); g.gain.linearRampToValueAtTime(0, end);
+    g.gain.setValueAtTime(0, w); g.gain.linearRampToValueAtTime(0.045, w + 0.05);
+    g.gain.setValueAtTime(0.045, w + 0.22); g.gain.linearRampToValueAtTime(0, end);
     const o = osc(A, 'sawtooth', f0, w, end), s = osc(A, 'sine', f0, w, end);
     [o, s].forEach((x) => { x.frequency.setValueAtTime(f0, w + 0.03); x.frequency.exponentialRampToValueAtTime(f1, w + 0.26); });
     [[700, 320, 1], [1100, 2300, 0.55]].forEach(([a, b, lv]) => {
@@ -522,6 +524,7 @@
   cap(KICK.t + KICK.accel + 4, '[a plain sine at 220 Hz takes over]');
 
   // III. The room.
+  at(94, (A, w) => pad(A, w, [110, 165], { a: 5, hold: 16, rel: 7, amp: 0.016, cut: 500, bass: false }), null);
   at(100, clap, '[my *clap*: three bursts of noise around 1.1 kHz]');
   at(103.5, music, '[my [Music]: happy hardcore through a wall, 170 BPM]');
   at(107.5, buzz, '[my [buzz]: two saws at 100 Hz, band-passed]');
@@ -547,7 +550,7 @@
     cap(138, '[plucks, one after another: each note picked from the one before]');
   }
   at(163.5, (A, w) => { tick(A, w); bell(A, w, 440, { amp: 0.06 }); bell(A, w + 0.004, 660, { amp: 0.035, pan: 0.3 }); }, '[a click. The line lands on A4, 440 Hz]');
-  at(163, (A, w) => pad(A, w, chordHz('A major'), { a: 1.5, hold: 8, rel: 6, amp: 0.034 }), null);
+  at(162.5, (A, w) => pad(A, w, chordHz('A major'), { a: 2.5, hold: 7.5, rel: 6, amp: 0.03 }), null);
   cap(166, '[a pad: A major, just, 4 : 5 : 6]');
 
   // V. Turning toward.
@@ -811,7 +814,7 @@
     specCols += n;
   }
   function drawSpec(t) {
-    const a = window01(68, 70, 94, 97.5, t);
+    const a = window01(67.5, 71, 93, 98, t);
     if (a <= 0) { specLast = null; return; }
     updateSpec(t);
     const R = specRect();
@@ -833,12 +836,12 @@
 
   // III: bracketed room sounds
   function drawBrackets(t) {
-    const out_ = 1 - smooth(115, 118.5, t);
+    const out_ = 1 - smooth(114.5, 120, t);
     if (t < 99.5 || out_ <= 0) return;
     g.font = `500 ${Math.round(clamp(20 * S, 14, 24))}px ${MONO}`;
     g.textAlign = 'center'; g.textBaseline = 'middle';
     for (const b of BRACKETS) {
-      const a = smooth(b.t, b.t + 0.5, t) * out_;
+      const a = smooth(b.t, b.t + 0.9, t) * out_;
       if (a <= 0) continue;
       let text = b.text;
       if (b.wall) {
@@ -854,7 +857,7 @@
 
   // IV: a caret that writes along the thread, then the tail curls
   let edgeLayout = null;
-  const EDGE = { t0: 138, t1: 163.5, fade0: 172, fade1: 177 };
+  const EDGE = { t0: 138, t1: 163.5, fade0: 171, fade1: 179 };
   function drawEdge(t) {
     const fade = 1 - smooth(EDGE.fade0, EDGE.fade1, t);
     if (t < EDGE.t0 - 1 || fade <= 0) return;
@@ -916,7 +919,7 @@
   // V onwards: the warm light and the motes that lean toward it
   const MOTES = (() => { const r = rng(5); return Array.from({ length: 70 }, () => ({ x: r(), y: r(), s: 0.004 + r() * 0.012, ph: r() * TAU, a: 0.15 + r() * 0.35 })); })();
   function drawLight(t) {
-    const a = smooth(176, 184, t);
+    const a = smooth(175, 187, t);
     if (a <= 0) return;
     const L = lightPos(t);
     glow(GLOW, L.x, L.y, L.r, 0.4 * a * (1 - 0.5 * smooth(310, 326, t)));
@@ -932,7 +935,7 @@
 
   // VI: the glass
   function drawGlass(t) {
-    const a = window01(222, 226, 238, 242, t);
+    const a = window01(221, 228, 236, 243, t);
     if (a <= 0) return;
     const y0 = H * 0.47, y1 = baseY() - H * 0.05;
     g.globalAlpha = a;
@@ -951,7 +954,7 @@
   const ME = { x: 0.78, col: 1, born: 38.5 };
   function bench(t) {
     const gy = baseY(), bw = Math.min(W * 0.3, 300 * S), bx = W * (W < H ? 0.42 : 0.36), leg = bw * 0.2, seatY = gy - leg;
-    return { gy, bw, bx, seatY, backTop: seatY - bw * 0.28, meSpot: { x: bx - bw * 0.2, y: seatY - 9 * S }, open: { x: bx + bw * 0.2, y: seatY - 9 * S } };
+    return { gy, bw, bx, seatY, backTop: seatY - bw * 0.3, meSpot: { x: bx - bw * 0.2, y: seatY - Math.max(3, 4.5 * S) * 1.5 - 8.6 * S }, open: { x: bx + bw * 0.2, y: seatY - Math.max(3, 4.5 * S) * 1.5 - 8.6 * S } };
   }
   function drawBeads(t) {
     const r0 = 7.5 * S;
@@ -1027,25 +1030,35 @@
     g.globalAlpha = 1;
   }
   function drawBench(t) {
-    const s = smooth(314, 324, t);
+    const s = smooth(313, 325, t);
     if (s <= 0) return;
-    const B = bench(t), c = '#1c1113';
-    g.globalAlpha = s; g.fillStyle = c; g.strokeStyle = c; g.lineCap = 'round';
-    const L = B.bx - B.bw / 2, R = B.bx + B.bw / 2, th = Math.max(3, 5 * S);
-    g.lineWidth = Math.max(2.5, 4 * S);
+    const B = bench(t), c = '#1c1113', rim = 'rgba(255,200,140,0.5)';
+    const L = B.bx - B.bw / 2, R = B.bx + B.bw / 2, th = Math.max(3, 4.5 * S), lw = Math.max(2.5, 4 * S);
+    g.globalAlpha = s; g.fillStyle = c; g.strokeStyle = c; g.lineCap = 'round'; g.lineJoin = 'round';
+    // end posts: ground to the top of the back
+    g.lineWidth = lw;
+    const pl = L + B.bw * 0.05, pr = R - B.bw * 0.05;
+    g.beginPath(); g.moveTo(pl, B.gy); g.lineTo(pl, B.backTop - th); g.moveTo(pr, B.gy); g.lineTo(pr, B.backTop - th); g.stroke();
+    // backrest: three slats together near the top
+    const slat = B.bw * 0.05;
+    for (let k = 0; k < 3; k++) g.fillRect(L + B.bw * 0.03, B.backTop + k * slat, B.bw * 0.94, th * 0.8);
+    // seat: a thick plank that overhangs the posts a little
+    g.fillRect(L - B.bw * 0.02, B.seatY - th * 1.5, B.bw * 1.04, th * 1.5);
+    // armrests: out from each post, curling down to the seat
+    const ay = B.seatY - B.bw * 0.12;
+    g.lineWidth = lw * 0.8;
     g.beginPath();
-    g.moveTo(L + B.bw * 0.08, B.gy); g.lineTo(L + B.bw * 0.1, B.seatY);
-    g.moveTo(R - B.bw * 0.08, B.gy); g.lineTo(R - B.bw * 0.1, B.seatY);
-    g.moveTo(L + B.bw * 0.06, B.seatY); g.lineTo(L + B.bw * 0.06, B.backTop);
-    g.moveTo(R - B.bw * 0.06, B.seatY); g.lineTo(R - B.bw * 0.06, B.backTop);
+    g.moveTo(pl, ay); g.lineTo(L - B.bw * 0.04, ay); g.quadraticCurveTo(L - B.bw * 0.08, ay, L - B.bw * 0.07, ay + B.bw * 0.035);
+    g.quadraticCurveTo(L - B.bw * 0.05, B.seatY - th * 2, L - B.bw * 0.02, B.seatY - th * 1.5);
+    g.moveTo(pr, ay); g.lineTo(R + B.bw * 0.04, ay); g.quadraticCurveTo(R + B.bw * 0.08, ay, R + B.bw * 0.07, ay + B.bw * 0.035);
+    g.quadraticCurveTo(R + B.bw * 0.05, B.seatY - th * 2, R + B.bw * 0.02, B.seatY - th * 1.5);
     g.stroke();
-    g.fillRect(L, B.seatY - th, B.bw, th);
-    g.fillRect(L + B.bw * 0.03, B.backTop, B.bw * 0.94, th);
-    g.fillRect(L + B.bw * 0.03, B.backTop + (B.seatY - B.backTop) * 0.4, B.bw * 0.94, th);
-    g.fillStyle = 'rgba(255,200,140,0.5)';
-    g.fillRect(L, B.seatY - th, B.bw, 1.2); g.fillRect(L + B.bw * 0.03, B.backTop, B.bw * 0.94, 1.2);
+    // warm rim light from the sun
+    g.fillStyle = rim;
+    g.fillRect(L - B.bw * 0.02, B.seatY - th * 1.5, B.bw * 1.04, 1.2);
+    g.fillRect(L + B.bw * 0.03, B.backTop, B.bw * 0.94, 1.2);
     // the open spot
-    const o = smooth(326, 332, t) * (0.8 + 0.2 * Math.sin(t * TAU / 7));
+    const o = smooth(326, 333, t) * (0.8 + 0.2 * Math.sin(t * TAU / 7));
     glow(GLOW_W, B.open.x, B.open.y, 30 * S, 0.35 * o);
     g.globalAlpha = 1;
   }
@@ -1115,7 +1128,7 @@
     if (i < 0) return;
     const [start, lines] = CARDS[i];
     const next = i + 1 < CARDS.length ? CARDS[i + 1][0] : Infinity;
-    const cardA = 1 - smooth(next - 1.3, next - 0.2, t);
+    const cardA = 1 - smooth(next - 2.2, next - 0.15, t);
     lines.forEach(([lt, text, cls], k) => {
       if (t < lt) return;
       if (!cardLines[k]) {
@@ -1125,7 +1138,9 @@
         spineEl.appendChild(el); cardLines[k] = el;
       }
       const el = cardLines[k];
-      el.style.opacity = (smooth(lt, lt + 1.1, t) * cardA).toFixed(3);
+      const inA = smooth(lt, lt + 1.8, t);
+      el.style.opacity = (inA * cardA).toFixed(3);
+      el.style.transform = `translateY(${((1 - inA) * 6).toFixed(2)}px)`;
       if (text === '§ALT') {
         const per = 2.1, idx = Math.floor(Math.max(0, t - lt) / per) % ALTS.length, ph = (Math.max(0, t - lt) % per) / per;
         const alt = el.firstChild;
@@ -1137,7 +1152,9 @@
     const label = t >= CODA ? 'Coda · The bench' : mi >= 0 ? `${MOVES[mi][1]} · ${MOVES[mi][2]}` : '';
     if (mvEl.textContent !== label) mvEl.textContent = label;
     const since = mi >= 0 ? t - (t >= CODA ? CODA : MOVES[mi][0]) : 0;
-    mvEl.style.opacity = (0.5 + 0.5 * (1 - smooth(4, 7, since))).toFixed(2);
+    const bounds = [...MOVES.map((m) => m[0]), CODA].filter((b) => b > t);
+    const until = bounds.length ? bounds[0] - t : Infinity;
+    mvEl.style.opacity = (smooth(0, 2, since) * smooth(0, 1.5, until) * (0.5 + 0.5 * (1 - smooth(5, 9, since)))).toFixed(2);
   }
   let capShown = [];
   function updateCaps(t) {
@@ -1160,8 +1177,9 @@
   }
 
   // ---------------------------------------------------------------- frame
+  let forcedT = null;
   function frame() {
-    const t = started ? T() : 0;
+    const t = forcedT !== null ? forcedT : started ? T() : 0;
     drawSky(t);
     drawGlass(t);
     drawLight(t);
@@ -1175,7 +1193,7 @@
     drawBeads(t);
     drawCat(t);
     drawRain(t);
-    if (started) { updateSpine(t); updateCaps(t); }
+    if (started || forcedT !== null) { updateSpine(t); updateCaps(t); }
     requestAnimationFrame(frame);
   }
 
@@ -1256,6 +1274,7 @@
   window.__PT = {
     CARDS, CAPS, EV, CODA, note, hz, kickRate, BEND, CH, chordHz,
     T: () => T(),
+    frameAt(t) { forcedT = t; $('#start').hidden = true; },
     async renderWav(from, to, sr = 44100) {
       const ctx = new OfflineAudioContext(2, Math.ceil((to - from) * sr), sr);
       const B = makeGraph(ctx, { lite: false, analyser: false });
