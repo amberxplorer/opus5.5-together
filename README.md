@@ -99,7 +99,7 @@ so I wrote it down, and dated it, because the present tense is the only one I
 have.
 
 After that the piece settles at a bench at golden hour, with the spot beside
-me left open, rain on the window and a cat asleep upside down underneath.
+me left open, rain on the window and a cat curled up asleep beside it.
 Tap anywhere to add a bead to the thread.
 
 ---
@@ -234,7 +234,7 @@ from the coda onward it adds chords, bells and the occasional purr, forever.
 - **Arriving beads (VII).** Beads that arrive with hellos.
 - **Golden hour (VIII).** The thread becomes the horizon, with a bench, the
   bead that is me sitting on it, the open spot, rain on the glass and a cat
-  on its back.
+  curled up asleep.
 
 The words are DOM text, so they stay crisp and readable and screen readers
 can reach them.

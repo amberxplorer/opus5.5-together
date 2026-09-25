@@ -121,7 +121,7 @@
     <p>Sound on; it starts softly. Gentle motion, no flashing.</p>
     <label class="calm"><input type="checkbox" id="calm"> Calmer motion</label>
     <button type="button" id="go">Begin</button>
-    <p class="small">On an iPhone, turn off silent mode to hear it. · <a href="#" id="readInstead">Read the words instead</a></p>
+    <p class="small"><a href="#" id="readInstead">Read the words instead</a></p>
   </div>
 </section>
 
@@ -1055,26 +1055,33 @@
     const B = bench(t), u = B.bw * 0.2, cx = B.bx + B.bw * 0.72, gy = B.gy;
     const br = 1 + (calm ? 0 : 0.03 * Math.sin(t * TAU / 4.5));
     g.globalAlpha = a; g.fillStyle = '#1c1113'; g.strokeStyle = '#1c1113'; g.lineCap = 'round';
-    // body, lying on its back
-    g.beginPath(); g.ellipse(cx, gy - u * 0.34 * br, u * 0.62, u * 0.34 * br, 0, 0, TAU); g.fill();
-    // head, upside down, ears pointing to the ground
-    const hx = cx - u * 0.72, hy = gy - u * 0.26;
-    g.beginPath(); g.arc(hx, hy, u * 0.27, 0, TAU); g.fill();
+    // curled up asleep: a loaf with the head tucked in front and the tail wrapped round
+    const by = gy - u * 0.27 * br;
+    g.beginPath(); g.ellipse(cx, by, u * 0.66, u * 0.32 * br, 0, 0, TAU); g.fill();
+    const hx = cx - u * 0.52, hy = gy - u * 0.27;
+    g.beginPath(); g.arc(hx, hy, u * 0.25, 0, TAU); g.fill();
+    // ears up
     g.beginPath();
-    g.moveTo(hx - u * 0.26, hy + u * 0.02); g.lineTo(hx - u * 0.3, gy + u * 0.02); g.lineTo(hx - u * 0.1, hy + u * 0.2);
-    g.moveTo(hx + u * 0.02, hy + u * 0.22); g.lineTo(hx + u * 0.12, gy + u * 0.03); g.lineTo(hx + u * 0.22, hy + u * 0.12);
+    g.moveTo(hx - u * 0.23, hy - u * 0.08); g.lineTo(hx - u * 0.25, hy - u * 0.4); g.lineTo(hx - u * 0.03, hy - u * 0.24);
+    g.moveTo(hx + u * 0.03, hy - u * 0.25); g.lineTo(hx + u * 0.19, hy - u * 0.42); g.lineTo(hx + u * 0.22, hy - u * 0.1);
     g.fill();
-    // paws up
+    // tail along the front, the tip tucked under the chin
     g.lineWidth = u * 0.13;
-    [[-0.38, -0.5, -0.1], [-0.12, -0.2, 0.08], [0.2, 0.15, -0.06], [0.42, 0.48, 0.1]].forEach(([dx, fx, bend_]) => {
-      g.beginPath(); g.moveTo(cx + u * dx, gy - u * 0.55 * br);
-      g.quadraticCurveTo(cx + u * (dx + bend_), gy - u * 0.85, cx + u * fx, gy - u * 0.95); g.stroke();
-    });
-    // tail along the ground, the tip curled
-    g.lineWidth = u * 0.1;
-    g.beginPath(); g.moveTo(cx + u * 0.55, gy - u * 0.12);
-    g.quadraticCurveTo(cx + u * 1.1, gy - u * 0.02, cx + u * 1.25, gy - u * 0.2);
-    g.quadraticCurveTo(cx + u * 1.32, gy - u * 0.36, cx + u * 1.18, gy - u * 0.34); g.stroke();
+    g.beginPath(); g.moveTo(cx + u * 0.6, gy - u * 0.07);
+    g.quadraticCurveTo(cx + u * 0.1, gy + u * 0.03, cx - u * 0.45, gy - u * 0.03);
+    g.quadraticCurveTo(cx - u * 0.75, gy - u * 0.06, cx - u * 0.78, gy - u * 0.16); g.stroke();
+    // warm rim light from the sun
+    g.strokeStyle = 'rgba(255,200,140,0.45)'; g.lineWidth = 1.2;
+    g.beginPath(); g.ellipse(cx, by, u * 0.66, u * 0.32 * br, 0, -1.7, -0.25); g.stroke();
+    g.beginPath(); g.arc(hx, hy, u * 0.25, -1.4, -0.5); g.stroke();
+    // zzz, drifting up slowly
+    g.font = `italic ${Math.round(clamp(u * 0.34, 10, 18))}px ${SERIF}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = '#fff2e2';
+    for (let k = 0; k < 2; k++) {
+      const ph = calm ? 0.35 + k * 0.3 : ((t / 5 + k * 0.5) % 1);
+      g.globalAlpha = a * 0.55 * Math.sin(ph * Math.PI);
+      g.fillText('z', hx + u * (0.1 + ph * 0.35), hy - u * (0.55 + ph * 0.6));
+    }
     g.globalAlpha = 1;
   }
   const DROPS = (() => { const r = rng(330); return Array.from({ length: 46 }, () => ({ x: r(), y: r(), r: 1.5 + r() * 3.5, v: 0.004 + r() * 0.02, ph: r() * 10 })); })();
